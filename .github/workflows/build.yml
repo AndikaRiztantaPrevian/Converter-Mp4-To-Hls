@@ -28,9 +28,9 @@ jobs:
 
       - name: Build exe
         run: |
-          pyinstaller --onefile --windowed --clean main.py --name mp4_to_hls ^
-            --add-binary "bin/ffmpeg.exe;bin" ^
-            --add-binary "bin/ffprobe.exe;bin"
+          pyinstaller --onefile --windowed --clean main.py --name mp4_to_hls `
+            --add-binary "bin/ffmpeg.exe:bin" `
+            --add-binary "bin/ffprobe.exe:bin"
 
       - name: Upload Release Asset (Windows exe)
         uses: softprops/action-gh-release@v1
@@ -56,8 +56,8 @@ jobs:
       - name: Build app
         run: |
           pyinstaller --onefile --windowed --clean main.py --name mp4_to_hls \
-            --add-binary "bin/ffmpeg;bin" \
-            --add-binary "bin/ffprobe;bin"
+            --add-binary "bin/ffmpeg:bin" \
+            --add-binary "bin/ffprobe:bin"
           cd dist && zip -r mp4_to_hls-mac.zip mp4_to_hls.app
 
       - name: Upload Release Asset (macOS app)
