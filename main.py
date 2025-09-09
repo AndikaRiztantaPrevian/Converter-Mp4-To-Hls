@@ -40,9 +40,23 @@ from PySide6.QtWidgets import (
     QMessageBox, QCheckBox, QProgressBar, QTextEdit, QFrame, QAbstractItemView
 )
 
-CONFIG_FILE = Path(__file__).parent / "settings.json"
-
 APP_TITLE = "MP4 → HLS (No-Reencode)"
+APP_NAME = "bikindesign_mp4_to_hls"
+
+def get_config_path() -> Path:
+    if sys.platform.startswith("win"):
+        base = Path(os.getenv("APPDATA", Path.home()))
+    elif sys.platform == "darwin":  # macOS
+        base = Path.home() / "Library" / "Application Support"
+    else:  # Linux/Unix
+        base = Path.home() / ".config"
+
+    cfg_dir = base / APP_NAME
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    return cfg_dir / "settings.json"
+
+CONFIG_FILE = get_config_path()
+
 
 # ---------- FFmpeg discovery ----------
 
@@ -236,10 +250,16 @@ class ConverterThread(QThread):
             for root, _, files in os.walk(out_dir):
                 for f in files:
                     p = Path(root) / f
-                    zf.write(p, arcname=f)
+                    # Simpan relatif dari out_dir agar isi zip bersih
+                    arcname = os.path.relpath(p, out_dir)
+                    zf.write(p, arcname=arcname)
 
-        self.sig.log.emit(f"DONE: {src.name} → {out_dir.name} (and {zip_path.name})")
+        # Hapus folder HLS setelah di-zip
+        shutil.rmtree(out_dir, ignore_errors=True)
+
+        self.sig.log.emit(f"DONE: {src.name} → {zip_path.name}")
         self.sig.file_progress.emit(src.name, 100)
+
 
 
 class SkipError(Exception):
