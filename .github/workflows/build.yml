@@ -55,7 +55,7 @@ jobs:
 
       - name: Build app
         run: |
-          pyinstaller --onefile --windowed --clean main.py --name mp4_to_hls \
+          pyinstaller --onedir --windowed --clean main.py --name mp4_to_hls \
             --add-binary "bin/ffmpeg:bin" \
             --add-binary "bin/ffprobe:bin"
           cd dist && zip -r mp4_to_hls-mac.zip mp4_to_hls.app
