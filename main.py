@@ -37,7 +37,8 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFileDialog, QListWidget, QListWidgetItem,
-    QMessageBox, QCheckBox, QProgressBar, QTextEdit, QFrame, QAbstractItemView
+    QMessageBox, QCheckBox, QProgressBar, QTextEdit, QFrame, QAbstractItemView,
+    QSpinBox
 )
 
 APP_TITLE = "MP4 → HLS (No-Reencode)"
@@ -279,13 +280,12 @@ def load_last_output() -> Optional[Path]:
 
 
 def save_last_output(path: Path):
+    data = {"last_output": str(path)}
     try:
-        CONFIG_FILE.write_text(
-            json.dumps({"last_output": str(path)}, indent=2),
-            encoding="utf-8"
-        )
-    except Exception as e:
-        print(f"WARNING: gagal menyimpan config → {e}")
+        data["segment_seconds"] = int(getattr(MainWindow.instance(), "segment_input").value())
+    except Exception:
+        pass
+    CONFIG_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 # ---------- UI ----------
@@ -398,6 +398,16 @@ class MainWindow(QMainWindow):
         v.addWidget(self.chk_skip)
         v.addWidget(self.chk_trans)
 
+        row_seg = QHBoxLayout()
+        self.segment_label = QLabel("Segment duration (detik):")
+        self.segment_input = QSpinBox()
+        self.segment_input.setMinimum(1)
+        self.segment_input.setMaximum(60)
+        self.segment_input.setValue(6)
+        row_seg.addWidget(self.segment_label)
+        row_seg.addWidget(self.segment_input)
+        v.addLayout(row_seg)
+
         ctrls = QHBoxLayout()
         ctrls.addWidget(self.progress_all)
         ctrls.addWidget(self.btn_convert)
@@ -467,12 +477,14 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, APP_TITLE, "Masukkan minimal 1 file MP4.")
             return
 
+        seg_seconds = int(self.segment_input.value())
         jobs = [
             Job(
                 src=Path(item.data(Qt.UserRole)),
                 out_root=self.out_dir,
                 skip_if_incompatible=self.chk_skip.isChecked(),
                 enable_transcode_if_needed=self.chk_trans.isChecked(),
+                segment_seconds=seg_seconds,
             )
             for item in [self.drop.item(i) for i in range(self.drop.count())]
         ]
